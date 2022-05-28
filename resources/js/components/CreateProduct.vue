@@ -7,10 +7,12 @@
                         <div class="form-group">
                             <label for="">Product Name</label>
                             <input type="text" v-model="product_name" placeholder="Product Name" class="form-control">
+                            <div style="color: red;" v-show="error_product_name != '' "> {{error_product_name}} </div>
                         </div>
                         <div class="form-group">
                             <label for="">Product SKU</label>
                             <input type="text" v-model="product_sku" placeholder="Product Name" class="form-control">
+                            <div style="color: red;" v-show="error_product_sku != '' "> {{error_product_sku}} </div>
                         </div>
                         <div class="form-group">
                             <label for="">Description</label>
@@ -23,8 +25,20 @@
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary">Media</h6>
                     </div>
+                    <!--                            :options="dropzoneOptions"-->
+                    <!--                           -->
+<!--                    v-on:vdropzone-sending-multiple="sendingEvent"-->
                     <div class="card-body border">
-                        <vue-dropzone ref="myVueDropzone" id="dropzone" :options="dropzoneOptions"></vue-dropzone>
+                        <vue-dropzone
+                            v-on:vdropzone-removed-file="removeEvent"
+                            v-on:vdropzone-success="responseSuccess"
+                            ref="myVueDropzone"
+                            id="dropzone"
+                            :options="dropzoneOptions"
+
+                        >
+
+                        </vue-dropzone>
                     </div>
                 </div>
             </div>
@@ -115,9 +129,16 @@ export default {
     data() {
         return {
             product_name: '',
+            error_product_name: '',
+            error_product_sku: '',
             product_sku: '',
             description: '',
-            images: [],
+            images: [
+                // {
+                //     uuid: '',
+                //     file_path: ''
+                // }
+            ],
             product_variant: [
                 {
                     option: this.variants[0].id,
@@ -126,14 +147,39 @@ export default {
             ],
             product_variant_prices: [],
             dropzoneOptions: {
-                url: 'https://httpbin.org/post',
+                url: '/store-multiple-image',
                 thumbnailWidth: 150,
                 maxFilesize: 0.5,
-                headers: {"My-Awesome-Header": "header value"}
+                addRemoveLinks: true,
+                headers: {
+                    "X-CSRF-TOKEN": document.head.querySelector("[name=csrf-token]").content
+                },
+                // success: function(file,response)
+                // {
+
+                // }
             }
         }
     },
     methods: {
+
+        responseSuccess (file, response) {
+                this.images.push({
+                    uuid: file.upload.uuid,
+                    name: file.name,
+                    thumbnail: 150,
+                    file_path: response.file_path
+                });
+
+        },
+        removeEvent (file, error, xhr) {
+            for (var i = 0; i < this.images.length; i++) {
+                if (this.images[i].uuid == file.upload.uuid) {
+                    this.images.splice(i, 1);
+                }
+            }
+        },
+
         // it will push a new object into product variant
         newVariant() {
             let all_variants = this.variants.map(el => el.id)
@@ -184,18 +230,30 @@ export default {
                 sku: this.product_sku,
                 description: this.description,
                 product_image: this.images,
+                dropzoneOptions: this.dropzoneOptions,
                 product_variant: this.product_variant,
                 product_variant_prices: this.product_variant_prices
             }
 
-
             axios.post('/product', product).then(response => {
-                console.log(response.data);
+                this.error_product_name = '';
+                this.error_product_sku = '';
+                if (response.data.status == 'error'){
+                    if (response.data.message.hasOwnProperty('title')){
+                        this.error_product_name = response.data.message.title[0];
+                    }
+                    if (response.data.message.hasOwnProperty('sku')){
+                        this.error_product_sku = response.data.message.sku[0];
+                    }
+                }else {
+                    // console.log(response.data.url);
+                    window.location.href = response.data.url;
+
+                }
             }).catch(error => {
                 console.log(error);
             })
 
-            console.log(product);
         }
 
 

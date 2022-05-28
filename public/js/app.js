@@ -2012,6 +2012,20 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 
 
@@ -2029,25 +2043,50 @@ __webpack_require__.r(__webpack_exports__);
   data: function data() {
     return {
       product_name: '',
+      error_product_name: '',
+      error_product_sku: '',
       product_sku: '',
       description: '',
-      images: [],
+      images: [// {
+        //     uuid: '',
+        //     file_path: ''
+        // }
+      ],
       product_variant: [{
         option: this.variants[0].id,
         tags: []
       }],
       product_variant_prices: [],
       dropzoneOptions: {
-        url: 'https://httpbin.org/post',
+        url: '/store-multiple-image',
         thumbnailWidth: 150,
         maxFilesize: 0.5,
+        addRemoveLinks: true,
         headers: {
-          "My-Awesome-Header": "header value"
-        }
+          "X-CSRF-TOKEN": document.head.querySelector("[name=csrf-token]").content
+        } // success: function(file,response)
+        // {
+        // }
+
       }
     };
   },
   methods: {
+    responseSuccess: function responseSuccess(file, response) {
+      this.images.push({
+        uuid: file.upload.uuid,
+        name: file.name,
+        thumbnail: 150,
+        file_path: response.file_path
+      });
+    },
+    removeEvent: function removeEvent(file, error, xhr) {
+      for (var i = 0; i < this.images.length; i++) {
+        if (this.images[i].uuid == file.upload.uuid) {
+          this.images.splice(i, 1);
+        }
+      }
+    },
     // it will push a new object into product variant
     newVariant: function newVariant() {
       var all_variants = this.variants.map(function (el) {
@@ -2100,20 +2139,36 @@ __webpack_require__.r(__webpack_exports__);
     },
     // store product into database
     saveProduct: function saveProduct() {
+      var _this2 = this;
+
       var product = {
         title: this.product_name,
         sku: this.product_sku,
         description: this.description,
         product_image: this.images,
+        dropzoneOptions: this.dropzoneOptions,
         product_variant: this.product_variant,
         product_variant_prices: this.product_variant_prices
       };
       axios.post('/product', product).then(function (response) {
-        console.log(response.data);
+        _this2.error_product_name = '';
+        _this2.error_product_sku = '';
+
+        if (response.data.status == 'error') {
+          if (response.data.message.hasOwnProperty('title')) {
+            _this2.error_product_name = response.data.message.title[0];
+          }
+
+          if (response.data.message.hasOwnProperty('sku')) {
+            _this2.error_product_sku = response.data.message.sku[0];
+          }
+        } else {
+          // console.log(response.data.url);
+          window.location.href = response.data.url;
+        }
       })["catch"](function (error) {
         console.log(error);
       });
-      console.log(product);
     }
   },
   mounted: function mounted() {
@@ -50500,7 +50555,23 @@ var render = function() {
                     _vm.product_name = $event.target.value
                   }
                 }
-              })
+              }),
+              _vm._v(" "),
+              _c(
+                "div",
+                {
+                  directives: [
+                    {
+                      name: "show",
+                      rawName: "v-show",
+                      value: _vm.error_product_name != "",
+                      expression: "error_product_name != '' "
+                    }
+                  ],
+                  staticStyle: { color: "red" }
+                },
+                [_vm._v(" " + _vm._s(_vm.error_product_name) + " ")]
+              )
             ]),
             _vm._v(" "),
             _c("div", { staticClass: "form-group" }, [
@@ -50526,7 +50597,23 @@ var render = function() {
                     _vm.product_sku = $event.target.value
                   }
                 }
-              })
+              }),
+              _vm._v(" "),
+              _c(
+                "div",
+                {
+                  directives: [
+                    {
+                      name: "show",
+                      rawName: "v-show",
+                      value: _vm.error_product_sku != "",
+                      expression: "error_product_sku != '' "
+                    }
+                  ],
+                  staticStyle: { color: "red" }
+                },
+                [_vm._v(" " + _vm._s(_vm.error_product_sku) + " ")]
+              )
             ]),
             _vm._v(" "),
             _c("div", { staticClass: "form-group" }, [
@@ -50566,7 +50653,11 @@ var render = function() {
             [
               _c("vue-dropzone", {
                 ref: "myVueDropzone",
-                attrs: { id: "dropzone", options: _vm.dropzoneOptions }
+                attrs: { id: "dropzone", options: _vm.dropzoneOptions },
+                on: {
+                  "vdropzone-removed-file": _vm.removeEvent,
+                  "vdropzone-success": _vm.responseSuccess
+                }
               })
             ],
             1
@@ -50625,9 +50716,9 @@ var render = function() {
                           { domProps: { value: variant.id } },
                           [
                             _vm._v(
-                              "\n                                        " +
+                              "\n                                            " +
                                 _vm._s(variant.title) +
-                                "\n                                    "
+                                "\n                                        "
                             )
                           ]
                         )
@@ -63300,8 +63391,8 @@ __webpack_require__.r(__webpack_exports__);
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /home/rifat/Programming/mediusware/interview/interview-question-sr/resources/js/app.js */"./resources/js/app.js");
-module.exports = __webpack_require__(/*! /home/rifat/Programming/mediusware/interview/interview-question-sr/resources/sass/app.scss */"./resources/sass/app.scss");
+__webpack_require__(/*! C:\xampp\htdocs\interview-question-sr\resources\js\app.js */"./resources/js/app.js");
+module.exports = __webpack_require__(/*! C:\xampp\htdocs\interview-question-sr\resources\sass\app.scss */"./resources/sass/app.scss");
 
 
 /***/ })

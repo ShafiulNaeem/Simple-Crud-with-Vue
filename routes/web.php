@@ -20,6 +20,7 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
+Route::post('/store-multiple-image','ProductController@multiple_image');
 
 Route::middleware('auth')->group(function () {
     Route::resource('product-variant', 'VariantController');
