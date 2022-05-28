@@ -93,7 +93,6 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $variants['page'] = 'create';
         $variants = Variant::all();
         return view('products.create', compact('variants'));
     }
@@ -237,7 +236,6 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        $variants['page'] = 'edit';
         $variants = Variant::all();
         return view('products.edit', compact('variants'));
     }
