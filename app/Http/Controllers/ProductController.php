@@ -18,9 +18,72 @@ class ProductController extends Controller
      *
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Http\Response|\Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view('products.index');
+
+        $data['variant'] = Variant::with('productVariants')->get()->toArray();
+
+        foreach ($data['variant'] as $key => $datum){
+
+            $array = $datum['product_variants'];
+            $temp = array_unique(array_column($array, 'variant'));
+            $unique_arr = array_intersect_key($array, $temp);
+
+            $data['variant'][$key]['unique_products_variants'] = $unique_arr;
+            unset($data['variant'][$key]['product_variants']);
+        }
+
+        $search_data = $request->all();
+
+        $data['value'] = Product::with(
+            'productVariantPrices',
+            'productVariantPrices.variantOne',
+            'productVariantPrices.variantTwo',
+            'productVariantPrices.variantThree',
+            'productVariants'
+        );
+
+        $data['value'] = $this->filter($data['value'],$search_data);
+
+        $data['value'] = $data['value']->orderBy('id','DESC')->paginate(10);
+
+        return view('products.index',compact('data'));
+    }
+
+    public function filter($data,$search_data){
+
+        if ($search_data != []){
+            if (array_key_exists('title',$search_data)){
+                if ($search_data['title'] !=null){
+                    $data = $data->where('title','LIKE','%'.$search_data['title'].'%');
+                }
+            }
+            if (array_key_exists('variant',$search_data)){
+                if ($search_data['variant'] !=null){
+                    $variant = $search_data['variant'];
+                    $data = $data->whereHas('productVariants', function($q) use ($variant){
+                        $q->where('variant','LIKE','%'.$variant.'%');
+                    });
+                }
+            }
+            if (array_key_exists('date',$search_data)){
+                if ($search_data['date'] !=null){
+                    $data = $data->whereDate('created_at',$search_data['date']);
+                }
+            }
+            if (array_key_exists('price_from',$search_data) && array_key_exists('price_to',$search_data)){
+                if ($search_data['price_from'] !=null && $search_data['price_to'] !=null){
+                    $price_from = $search_data['price_from'];
+                    $price_to = $search_data['price_to'];
+                    $data = $data->whereHas('productVariantPrices', function($q) use ($price_from,$price_to){
+                        $q->whereBetween('price', [$price_from, $price_to]);
+                    });
+                }
+            }
+
+        }
+
+        return $data;
     }
 
     /**
@@ -30,6 +93,7 @@ class ProductController extends Controller
      */
     public function create()
     {
+        $variants['page'] = 'create';
         $variants = Variant::all();
         return view('products.create', compact('variants'));
     }
@@ -173,6 +237,7 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
+        $variants['page'] = 'edit';
         $variants = Variant::all();
         return view('products.edit', compact('variants'));
     }
